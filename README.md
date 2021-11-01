@@ -16,6 +16,7 @@
 - [Resources](#resources)
   - [Machine Learning for Multi-Track Music Generation](#machine-learning-for-multi-track-music-generation)
   - [Send MIDI Files Between Laptop and Arduino](#send-midi-files-between-laptop-and-arduino)
+  - [Observe MIDI Files](#observe-midi-files)
 
 ## BOM
 * Ubuntu 20.04
@@ -74,7 +75,7 @@ Process to connect Ttymidi to TiMidity++, play music, and send file to Arduino
 ttymidi -s /dev/ttyACM0`
 timidity -iA
 aconnect 128:0 129:0
-aplaymidi -p 128:1 rock_candy_geralt.mid & timidity -Os rock_candy_geralt.mid
+aplaymidi -p 128:1 rock_candy_geralt.mid & timidity -Os gen/rock_candy_geralt.mid
 ```
 
 To see port options:
@@ -104,3 +105,12 @@ Google Magenta Multitrack MusicVAE
 [Ttymidi](http://www.varal.org/ttymidi/): allows external serial devices to interface with ALSA MIDI applications.
 
 [TiMidity++](http://timidity.sourceforge.net/#info): software synthesizer that can play MIDI files without a hardware synthesizer. Plays MIDI files on Ubuntu and allows Arduino boards to talk to MIDI applications.
+
+## Observe MIDI Files
+
+[Rosegarden] - track-oriented audio / MIDI sequencer to visualize MIDI files. Very finicky...
+* Install: `sudo apt install rosegarden`
+* Run:
+  1. `rosegarden`
+  2. `timidity -iA`
+  3. In rosegarden UI, click on "manage midi devices" then connect first port in midi outputs box ([instructions](https://ubuntuforums.org/showthread.php?t=1700943))
