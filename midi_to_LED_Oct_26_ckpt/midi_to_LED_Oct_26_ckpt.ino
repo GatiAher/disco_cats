@@ -4,30 +4,13 @@
    Oct 26, 2021
 */
 
-// possible commands
-const byte NOTE_OFF = 128;
-const byte NOTE_ON = 144;
-const byte POLY_PRESSURE = 160;
-const byte CONTROL_CHANGE = 176;
-const byte PROGRAM_CHANGE = 192;
-const byte AFTERTOUCH = 208;
-const byte PITCH_BEND = 224;
-
-// state variables
-int state = 0; // state machine variable
-// 0 = command channel waiting
-// 1 = data waiting
-// 2 = velocity waiting
-
 byte incomingByte;
-
-byte currentCommand;
-byte currentChannel;
-byte currentNote;
-byte currentVelocity;
+byte note;
+byte velocity;
 int noteDown = LOW;
+int state = 0; // state machine variable 0 = command waiting : 1 = note waiting : 2 = velocity waiting
+int channel = 0; // MIDI channel to respond to (in this case channel 2) chnage this to change the channel number
 
-// display
 int LED1 = 12;
 int LED2 = 11;
 int LED3 = 10;
@@ -50,7 +33,7 @@ void setup() {
   state = 0;
 
   Serial.begin(115200); // will change baud rate of MIDI traffic to 115200 (default baud rate of ttymidi)
-
+  
   // test LEDs work
   digitalWrite(LED1, HIGH);
   digitalWrite(LED2, HIGH);
@@ -73,56 +56,41 @@ void setup() {
 
 // loop: wait for serial data, and interpret the message
 void loop() {
-  if (Serial.available() > 0) {
-    incomingByte = Serial.read();
-
-    switch (state) {
-
-      case 0:
-        // identify command (most significant 4 bits)
-        currentCommand = (incomingByte & 240);
-        // identify channel (least significant 4 bits)
-        currentChannel = (incomingByte & 15);
-
-        if (currentCommand == NOTE_ON) {
-          state = 1;
-          noteDown = HIGH;
-        }
-
-        if (currentCommand == NOTE_OFF) {
-          state = 1;
-          noteDown = LOW;
-        }
-
-      //        if (currentCommand == PROGRAM_CHANGE) {
-      //          state = 1;
-      //        }
-
-
-      case 1:
-        // validate: data byte should have MSB 0
-        if (incomingByte >= 128) {
-          state = 0;  // reset state machine as this should be a note number
-          break;
-        }
-
-        //        if ((currentCommand == NOTE_ON) | (currentCommand == NOTE_OFF)) {
-        currentNote = incomingByte;
-        state = 2;
-        break;
-      //        }
-
-      case 2:
-        // validate: data byte should have MSB 0
-        if (incomingByte >= 128) {
+    if (Serial.available() > 0) {
+      // read the incoming byte
+      incomingByte = Serial.read();
+      switch (state) {
+        case 0:
+          // look for as status-byte, our channel, note on
+          if (incomingByte == (144 | channel)) {
+            noteDown = HIGH;
+            state = 1;
+          }
+          // look for as status-byte, our channel, note off
+          if (incomingByte == (128 | channel)) {
+            noteDown = LOW;
+            state = 1;
+          }
+            
+        case 1:
+          // get the note to play or stop
+          if (incomingByte < 128) {
+            note = incomingByte;
+            state = 2;
+          }
+          else {
+            state = 0;  // reset state machine as this should be a note number
+          }
+  
+        case 2:
+          // get the velocity
+          if (incomingByte < 128) {
+            playNote(note, incomingByte, noteDown); // fire LED
+          }
           state = 0;  // reset state machine to start
-          break;
-        }
 
-        playNote(currentNote, incomingByte, noteDown); // fire LED
-
+      }
     }
-  }
 }
 
 
@@ -132,8 +100,6 @@ void playNote(byte note, byte velocity, int down) {
   if ((down == HIGH) && (velocity == 0)) {
     down = LOW;
   }
-
-  down = HIGH;
 
   if (note == 65) {
     digitalWrite(LED1, down);
