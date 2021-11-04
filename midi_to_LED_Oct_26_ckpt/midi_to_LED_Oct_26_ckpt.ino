@@ -9,7 +9,7 @@ byte note;
 byte velocity;
 int noteDown = LOW;
 int state = 0; // state machine variable 0 = command waiting : 1 = note waiting : 2 = velocity waiting
-int channel = 0; // MIDI channel to respond to (in this case channel 2) chnage this to change the channel number
+int channel = 1; // MIDI channel to respond to (in this case channel 2) chnage this to change the channel number
 
 int LED1 = 12;
 int LED2 = 11;
@@ -71,7 +71,7 @@ void loop() {
             noteDown = LOW;
             state = 1;
           }
-            
+  
         case 1:
           // get the note to play or stop
           if (incomingByte < 128) {
@@ -81,6 +81,7 @@ void loop() {
           else {
             state = 0;  // reset state machine as this should be a note number
           }
+          break;
   
         case 2:
           // get the velocity
@@ -88,7 +89,6 @@ void loop() {
             playNote(note, incomingByte, noteDown); // fire LED
           }
           state = 0;  // reset state machine to start
-
       }
     }
 }
