@@ -76,6 +76,7 @@ void setup() {
     spiTransfer(i + 1, 0);
   }
 
+  // TODO: error when more than one LED on per row; perhaps because RSET shoudl be 120k Ohm but it 120 Ohm?
   //  // test: turn all LEDs ON
   //  for (int i = 0; i < 5; i++) {
   //    for (int j = 0; j < 5; j++) {
