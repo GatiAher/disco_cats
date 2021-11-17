@@ -17,7 +17,6 @@ byte incomingByte;
 byte note;
 byte velocity;
 int noteDown = LOW;
-int state = 0; // state machine variable 0 = command waiting : 1 = note waiting : 2 = velocity waiting
 int channel = 1; // MIDI channel to respond to (in this case channel 2) change this to play different channel
 
 int LED_MATRIX[ 5 ][ 5 ] = {
@@ -27,6 +26,10 @@ int LED_MATRIX[ 5 ][ 5 ] = {
   {0, 0, 0, 0, 0},
   {0, 0, 0, 0, 0}
 };
+
+// MIDI decoder state machine
+int state = 0; // state machine variable 0 = command waiting : 1 = note waiting : 2 = velocity waiting
+
 
 //SPI pins for MAX7219
 #define SPI_CLK 11 // CLOCK (on positive edge of CLK, copy data across shift register)  

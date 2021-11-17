@@ -5,13 +5,13 @@
 
 - [Disco Cats](#disco-cats)
   - [BOM](#bom)
-  - [Subsystem for accepting user input](#subsystem-for-accepting-user-input)
   - [Subsystem for Generating AI-Powered Music](#subsystem-for-generating-ai-powered-music)
     - [Install](#install)
     - [Run](#run)
   - [Subsystem for playing and transferring saved MIDI file to arduino](#subsystem-for-playing-and-transferring-saved-midi-file-to-arduino)
     - [Install](#install-1)
     - [Run](#run-1)
+  - [Subsystem for accepting user input](#subsystem-for-accepting-user-input)
   - [Subsystem for Arduino Control of Lights and Music](#subsystem-for-arduino-control-of-lights-and-music)
 - [Resources](#resources)
   - [Machine Learning for Multi-Track Music Generation](#machine-learning-for-multi-track-music-generation)
@@ -21,9 +21,6 @@
 ## BOM
 * Ubuntu 20.04
 * Arduino UNO
-
-## Subsystem for accepting user input
-* TODO
 
 ## Subsystem for Generating AI-Powered Music 
 
@@ -84,9 +81,42 @@ aconnect -i            # this just shows input port options
 aconnect -o            # this just shows output port options
 ```
 
+## Subsystem for accepting user input
+
+Overview:
+* Arduino_button sends results of button input over serial `/dev/ttyACM1`
+* Laptop listens to `/dev/ttyACM1` and sends selected midi file over serial `/dev/ttyACM0`
+* Arduino_lights listens to `/dev/ttyACM0` and controls LEDs
+
+Installation:
+* everything required for music generation and transmittance to arduino
+* google/python-fire: `conda install fire -c conda-forge`
+* pySerial: `pip install pyserial`
+
+Run:
+1. Load code onto Arduino
+2. `ttymidi -s /dev/ttyACM0`
+3. `timidity -iA`
+4. `aconnect 128:0 129:0`
+5. `conda activate magenta`
+6. `python3 Linux_Music_Generator.py`
+
 ## Subsystem for Arduino Control of Lights and Music
 
-* TODO
+Components
+* MIDI Decoder: finite state machine, decodes each message as command-data-data bytes
+* Matrix State: tracks state of LED
+* Hardware Interface: Using 4-wire SPI interface to MAX7219 chip
+
+MAX7219 Chip:
+* Rapid multiplexing: to drive one row of LEDs at a time
+* Shift register: to place data values for cells of a given row
+* Latch register: to load data values to LED Matrix only when all values have been shifted into their final place
+
+Challenges:
+* Very funky wiring diagram and MAX7219 initialization on start-up
+* Had to write own code to manage LED matrix with state of MIDI file
+* Using no libraries because libraries are slow (bloated) and unnecessary
 
 # Resources
 
