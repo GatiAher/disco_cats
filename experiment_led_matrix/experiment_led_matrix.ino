@@ -25,6 +25,23 @@ void setup() {
   pinMode(SPI_CS, OUTPUT);
   Serial.begin(115200); // will change baud rate of MIDI traffic to 115200 (baud rate of ttymidi)
 
+  // configure MAX7219
+  digitalWrite(SPI_CS, HIGH);
+  /* Turn off display test mode */
+  spiTransfer(OP_DISPLAYTEST, 0);
+  /* Set scanlimit is set to max */
+  spiTransfer(OP_SCANLIMIT, 7);
+  /* Set no-decode mode */
+  spiTransfer(OP_DECODEMODE, 0);
+  /* Turn off power-saving mode on startup */
+  spiTransfer(OP_SHUTDOWN, 1);
+  /* Set the brightness to a medium values */
+  spiTransfer(OP_INTENSITY, 8);
+  /* Clear the display */
+  for (int i = 0; i < 8; i++) {
+    spiTransfer(i + 1, 0);
+  }
+
   digitalWrite(SPI_CS, HIGH);
 }
 

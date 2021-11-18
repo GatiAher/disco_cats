@@ -18,13 +18,21 @@ byte note;
 byte velocity;
 int noteDown = LOW;
 int channel = 1; // MIDI channel to respond to (in this case channel 2) change this to play different channel
+//
+//int LED_MATRIX[ 5 ][ 5 ] = {
+//  {0, 0, 0, 0, 0},
+//  {0, 0, 0, 0, 0},
+//  {0, 0, 0, 0, 0},
+//  {0, 0, 0, 0, 0},
+//  {0, 0, 0, 0, 0}
+//};
 
 int LED_MATRIX[ 5 ][ 5 ] = {
-  {0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0}
+  {1, 0, 0, 0, 0},
+  {0, 1, 0, 0, 0},
+  {0, 0, 1, 0, 0},
+  {0, 0, 0, 1, 0},
+  {0, 0, 0, 0, 1}
 };
 
 // MIDI decoder state machine
@@ -78,6 +86,12 @@ void setup() {
   for (int i = 0; i < 8; i++) {
     spiTransfer(i + 1, 0);
   }
+
+  // test
+  playMatrix();
+  delay(5000);
+
+
 
   // TODO: error when more than one LED on per row; perhaps because RSET shoudl be 120k Ohm but it 120 Ohm?
   //  // test: turn all LEDs ON
