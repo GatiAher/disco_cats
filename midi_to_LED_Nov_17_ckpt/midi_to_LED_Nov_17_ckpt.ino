@@ -18,7 +18,8 @@ byte note;
 byte velocity;
 int noteDown = LOW;
 int channel = 1; // MIDI channel to respond to (in this case channel 2) change this to play different channel
-//
+//int channel; // Any channel
+
 //int LED_MATRIX[ 5 ][ 5 ] = {
 //  {0, 0, 0, 0, 0},
 //  {0, 0, 0, 0, 0},
@@ -27,12 +28,15 @@ int channel = 1; // MIDI channel to respond to (in this case channel 2) change t
 //  {0, 0, 0, 0, 0}
 //};
 
-int LED_MATRIX[ 5 ][ 5 ] = {
-  {0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0}
+int LED_MATRIX[ 8 ][ 8 ] = {
+  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 1
+  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 2
+  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 3
+  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 4
+  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 5
+  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 6
+  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 7
+  {0, 0, 0, 0, 0, 0, 0, 0}  // Instrument 8
 };
 
 // MIDI decoder state machine
@@ -122,13 +126,24 @@ void loop() {
     incomingByte = Serial.read();
     switch (state) {
       case 0:
-        // look for as status-byte, our channel, note on
-        if (incomingByte == (144 | channel)) {
+
+        //        look for as status - byte, our channel, note on
+        //        if (incomingByte == (144 | channel)) {
+        // check for NOTE_ON
+        if ((incomingByte & 0xf0) == 0x90) {
+          // take last 4 bits
+          channel = incomingByte & 0x0f;
           noteDown = HIGH;
           state = 1;
         }
-        // look for as status-byte, our channel, note off
-        if (incomingByte == (128 | channel)) {
+
+        //        look for as status - byte, our channel, note off
+        //        if (incomingByte == (128 | channel)) {
+
+        // check for NOTE_OFF
+        if ((incomingByte & 0xf0) == 0x80) {
+          // take last 4 bits
+          channel = incomingByte & 0x0f;
           noteDown = LOW;
           state = 1;
         }
@@ -154,7 +169,7 @@ void loop() {
           if (velocity == 0) {
             noteDown = LOW;
           }
-          updateMatrix(note, velocity, noteDown);
+          updateMatrix(channel, note, velocity, noteDown);
         }
         playMatrix();
         state = 0;  // reset state machine
@@ -168,146 +183,73 @@ void loop() {
 }
 
 
-void updateMatrix(byte note, byte velocity, int down) {
-  /*
-     Update matrix state
-  */
-  if (note >= 0 && note <= 59) {
-    // upper octaves
-    switch (note % 12) {
-      case 0:
-        // note C
-        LED_MATRIX[0][0] = (down) ? 1 : 0;
-        break;
+void updateMatrix(int channel, byte note, byte velocity, int down) {
+  int instrument = channel % 8;
+  switch (note % 12) {
+    case 0:
+    // note C
+    case 1:
+      // note C#
+      for (int i = 0; i < 8; i++) {
+        LED_MATRIX[instrument][7] = (down) ? 1 : 0;
+      }
+      break;
 
-      case 1:
-        // note C#
-        LED_MATRIX[0][1] = (down) ? 1 : 0;
-        break;
+    case 2:
+    // note D
+    case 3:
+      // note D#
+      for (int i = 0; i < 2; i++) {
+        LED_MATRIX[instrument][1] = (down) ? 1 : 0;
+      }
+      break;
 
-      case 2:
-        // note D
-        LED_MATRIX[0][2] = (down) ? 1 : 0;
-        break;
+    case 4:
+      // note E
+      for (int i = 0; i < 3; i++) {
+        LED_MATRIX[instrument][2] = (down) ? 1 : 0;
+      }
+      break;
 
-      case 3:
-        // note D#
-        LED_MATRIX[0][3] = (down) ? 1 : 0;
-        break;
+    case 5:
+    // note F
+    case 6:
+      // note F#
+      for (int i = 0; i < 4; i++) {
+        LED_MATRIX[instrument][3] = (down) ? 1 : 0;
+      }
+      break;
 
-      case 4:
-        // note E
-        LED_MATRIX[0][4] = (down) ? 1 : 0;
-        break;
+    case 7:
+    // note G
+    case 8:
+      // note G#
+      for (int i = 0; i < 5; i++) {
+        LED_MATRIX[instrument][4] = (down) ? 1 : 0;
+      }
+      break;
 
-      case 5:
-        // note E#
-        LED_MATRIX[1][0] = (down) ? 1 : 0;
-        break;
+    case 9:
+    // note A
+    case 10:
+      // note A#
+      for (int i = 0; i < 6; i++) {
+        LED_MATRIX[instrument][5] = (down) ? 1 : 0;
+      }
+      break;
 
-      case 6:
-        // note F
-        LED_MATRIX[1][1] = (down) ? 1 : 0;
-        break;
+    case 11:
+      // note B
+      for (int i = 0; i < 7; i++) {
+        LED_MATRIX[instrument][6] = (down) ? 1 : 0;
+      }
+      break;
 
-      case 7:
-        // note F#
-        LED_MATRIX[1][2] = (down) ? 1 : 0;
-        break;
-
-      case 8:
-        // note G
-        LED_MATRIX[1][3] = (down) ? 1 : 0;
-        break;
-
-      case 9:
-        // note G#
-        LED_MATRIX[1][4] = (down) ? 1 : 0;
-        break;
-
-      case 10:
-        // note A
-        LED_MATRIX[2][0] = (down) ? 1 : 0;
-        break;
-
-      case 11:
-        // note A#
-        LED_MATRIX[2][1] = (down) ? 1 : 0;
-        break;
-
-      default:
-        // not a note -- do nothing
-        break;
-    }
+    default:
+      // not a note -- do nothing
+      break;
   }
-  else {
-    // lower octaves
-    switch (note % 12) {
-      case 0:
-        // note C
-        LED_MATRIX[2][3] = (down) ? 1 : 0;
-        break;
 
-      case 1:
-        // note C#
-        LED_MATRIX[2][4] = (down) ? 1 : 0;
-        break;
-
-      case 2:
-        // note D
-        LED_MATRIX[3][0] = (down) ? 1 : 0;
-        break;
-
-      case 3:
-        // note D#
-        LED_MATRIX[3][1] = (down) ? 1 : 0;
-        break;
-
-      case 4:
-        // note E
-        LED_MATRIX[3][2] = (down) ? 1 : 0;
-        break;
-
-      case 5:
-        // note E#
-        LED_MATRIX[3][3] = (down) ? 1 : 0;
-        break;
-
-      case 6:
-        // note F
-        LED_MATRIX[3][4] = (down) ? 1 : 0;
-        break;
-
-      case 7:
-        // note F#
-        LED_MATRIX[4][0] = (down) ? 1 : 0;
-        break;
-
-      case 8:
-        // note G
-        LED_MATRIX[4][1] = (down) ? 1 : 0;
-        break;
-
-      case 9:
-        // note G#
-        LED_MATRIX[4][2] = (down) ? 1 : 0;
-        break;
-
-      case 10:
-        // note A
-        LED_MATRIX[4][3] = (down) ? 1 : 0;
-        break;
-
-      case 11:
-        // note A#
-        LED_MATRIX[4][4] = (down) ? 1 : 0;
-        break;
-
-      default:
-        // not a note -- do nothing
-        break;
-    }
-  }
 }
 
 
@@ -322,7 +264,7 @@ void playMatrix() {
   byte data = 0;
 
   // determine OP_DIGITX (row to give GND to)
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 8; i++) {
     opcode = i + 1;
 
     // determine data value from LED_MATRIX cells for given row
