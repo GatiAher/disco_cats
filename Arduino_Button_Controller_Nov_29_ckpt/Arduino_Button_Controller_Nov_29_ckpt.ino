@@ -7,35 +7,33 @@
 */
 
 // buttons
-#define BUTTON_A 4
-#define BUTTON_B 5
-#define BUTTON_C 6
-#define BUTTON_D 7
+#define BUTTON_INTERPOLATE A1
+#define BUTTON_A A3
+#define BUTTON_B A5
+#define BUTTON_C 12
+#define BUTTON_D 10
 #define BUTTON_E 8
-#define BUTTON_F 9
-#define BUTTON_G 10
-#define BUTTON_H 11
-#define BUTTON_INTERPOLATE 2
+#define BUTTON_F 6
+#define BUTTON_G 4
+#define BUTTON_H 2
 
 // status LEDs
-#define LED_A 12
-#define LED_B 13
-#define LED_C A0
-#define LED_D A1
-#define LED_E A2
-#define LED_F A3
-#define LED_G A4
-#define LED_H A5
-#define LED_INTERPOLATE 3
+#define LED_INTERPOLATE A0
+#define LED_A A2
+#define LED_B A4
+#define LED_C 13
+#define LED_D 11
+#define LED_E 9
+#define LED_F 7
+#define LED_G 5
+#define LED_H 3
 
 // state variables
 // the current state of the output pin
-int selectionStateInterpolate = HIGH;
-int selectionStateA = HIGH;
-int selectionStateB = HIGH;
-int selectionStateC = HIGH;
-
-// TODO: when these are plugged in, initialize to HIGH
+int selectionStateInterpolate = LOW;
+int selectionStateA = LOW;
+int selectionStateB = LOW;
+int selectionStateC = LOW;
 int selectionStateD = LOW;
 int selectionStateE = LOW;
 int selectionStateF = LOW;
@@ -43,6 +41,7 @@ int selectionStateG = LOW;
 int selectionStateH = LOW;
 
 // the current reading from the input pin
+int buttonStateInterpolate = LOW;
 int buttonStateA = LOW;
 int buttonStateB = LOW;
 int buttonStateC = LOW;
@@ -51,9 +50,9 @@ int buttonStateE = LOW;
 int buttonStateF = LOW;
 int buttonStateG = LOW;
 int buttonStateH = LOW;
-int buttonStateInterpolate = LOW;
 
 // the previous reading from the input pin
+int lastButtonStateInterpolate = LOW;
 int lastButtonStateA = LOW;
 int lastButtonStateB = LOW;
 int lastButtonStateC = LOW;
@@ -62,7 +61,6 @@ int lastButtonStateE = LOW;
 int lastButtonStateF = LOW;
 int lastButtonStateG = LOW;
 int lastButtonStateH = LOW;
-int lastButtonStateInterpolate = LOW;
 
 // the following variables are unsigned longs because the time, measured in
 // milliseconds, will quickly become a bigger number than can be stored in an int.
@@ -72,6 +70,7 @@ unsigned long debounceDelay = 50;    // the debounce time; increase if the outpu
 void setup() {
   Serial.begin(115200);
 
+  pinMode(BUTTON_INTERPOLATE, INPUT);
   pinMode(BUTTON_A, INPUT);
   pinMode(BUTTON_B, INPUT);
   pinMode(BUTTON_C, INPUT);
@@ -80,8 +79,8 @@ void setup() {
   pinMode(BUTTON_F, INPUT);
   pinMode(BUTTON_G, INPUT);
   pinMode(BUTTON_H, INPUT);
-  pinMode(BUTTON_INTERPOLATE, INPUT);
 
+  pinMode(LED_INTERPOLATE, OUTPUT);
   pinMode(LED_A, OUTPUT);
   pinMode(LED_B, OUTPUT);
   pinMode(LED_C, OUTPUT);
@@ -90,9 +89,9 @@ void setup() {
   pinMode(LED_F, OUTPUT);
   pinMode(LED_G, OUTPUT);
   pinMode(LED_H, OUTPUT);
-  pinMode(LED_INTERPOLATE, OUTPUT);
 
   // set initial LED state
+  digitalWrite(LED_INTERPOLATE, selectionStateInterpolate);
   digitalWrite(LED_A, selectionStateA);
   digitalWrite(LED_B, selectionStateB);
   digitalWrite(LED_C, selectionStateC);
@@ -101,12 +100,18 @@ void setup() {
   digitalWrite(LED_F, selectionStateF);
   digitalWrite(LED_G, selectionStateG);
   digitalWrite(LED_H, selectionStateH);
-  digitalWrite(LED_INTERPOLATE, selectionStateInterpolate);
 
   debounced_seed_selection(BUTTON_A, LED_A, selectionStateA, buttonStateA, lastButtonStateA, 'a');
   debounced_seed_selection(BUTTON_B, LED_B, selectionStateB, buttonStateB, lastButtonStateB, 'b');
   debounced_seed_selection(BUTTON_C, LED_C, selectionStateC, buttonStateC, lastButtonStateC, 'c');
+  debounced_seed_selection(BUTTON_D, LED_D, selectionStateD, buttonStateD, lastButtonStateD, 'd');
+  debounced_seed_selection(BUTTON_E, LED_E, selectionStateE, buttonStateE, lastButtonStateE, 'e');
+  debounced_seed_selection(BUTTON_F, LED_F, selectionStateF, buttonStateF, lastButtonStateF, 'f');
+  debounced_seed_selection(BUTTON_G, LED_G, selectionStateG, buttonStateG, lastButtonStateG, 'g');
+  debounced_seed_selection(BUTTON_H, LED_H, selectionStateH, buttonStateH, lastButtonStateH, 'h');
   delay(1000);
+
+  Serial.println("Start Loop");
 }
 
 void debounced_seed_selection(int buttonPin, int ledPin, int &selectionState, int &buttonState, int &lastButtonState, char c) {
@@ -134,6 +139,7 @@ void debounced_seed_selection(int buttonPin, int ledPin, int &selectionState, in
       // only toggle selection state if the new button state is HIGH
       if (buttonState == HIGH) {
         selectionState = !selectionState;
+
 
         // only send request if new selection state is HIGH
         if (selectionState == HIGH) {
@@ -233,6 +239,7 @@ void loop() {
     set status LED
     send selection over serial
   */
+  debounced_interpolation_selection(BUTTON_INTERPOLATE, LED_INTERPOLATE, selectionStateInterpolate, buttonStateInterpolate, lastButtonStateInterpolate);
   debounced_seed_selection(BUTTON_A, LED_A, selectionStateA, buttonStateA, lastButtonStateA, 'a');
   debounced_seed_selection(BUTTON_B, LED_B, selectionStateB, buttonStateB, lastButtonStateB, 'b');
   debounced_seed_selection(BUTTON_C, LED_C, selectionStateC, buttonStateC, lastButtonStateC, 'c');
@@ -241,5 +248,4 @@ void loop() {
   debounced_seed_selection(BUTTON_F, LED_F, selectionStateF, buttonStateF, lastButtonStateF, 'f');
   debounced_seed_selection(BUTTON_G, LED_G, selectionStateG, buttonStateG, lastButtonStateG, 'g');
   debounced_seed_selection(BUTTON_H, LED_H, selectionStateH, buttonStateH, lastButtonStateH, 'h');
-  debounced_interpolation_selection(BUTTON_INTERPOLATE, LED_INTERPOLATE, selectionStateInterpolate, buttonStateInterpolate, lastButtonStateInterpolate);
 }
