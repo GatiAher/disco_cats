@@ -20,16 +20,22 @@ int noteDown = LOW;
 int channel = 1; // MIDI channel to respond to (in this case channel 2) change this to play different channel
 //int channel; // Any channel
 
-//int LED_MATRIX[ 5 ][ 5 ] = {
-//  {0, 0, 0, 0, 0},
-//  {0, 0, 0, 0, 0},
-//  {0, 0, 0, 0, 0},
-//  {0, 0, 0, 0, 0},
-//  {0, 0, 0, 0, 0}
+
+//int LED_MATRIX[ 8 ][ 8 ] = {
+//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 1
+//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 2
+//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 3
+//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 4
+//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 5
+//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 6
+//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 7
+//  {0, 0, 0, 0, 0, 0, 0, 0}  // Instrument 8
 //};
 
+
+
 int LED_MATRIX[ 8 ][ 8 ] = {
-  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 1
+  {0, 0, 0, 0, 1, 0, 0, 0}, // Instrument 1
   {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 2
   {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 3
   {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 4
@@ -38,6 +44,18 @@ int LED_MATRIX[ 8 ][ 8 ] = {
   {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 7
   {0, 0, 0, 0, 0, 0, 0, 0}  // Instrument 8
 };
+
+
+//int LED_MATRIX[ 8 ][ 8 ] = {
+//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 1
+//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 2
+//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 3
+//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 4
+//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 5
+//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 6
+//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 7
+//  {1, 1, 1, 1, 1, 1, 1, 1}  // Instrument 8
+//};
 
 // MIDI decoder state machine
 int state = 0; // state machine variable 0 = command waiting : 1 = note waiting : 2 = velocity waiting
@@ -68,10 +86,12 @@ void setup() {
   /*
      Initialize inputs and outputs, MAX7219 config, begin serial, and test that LEDs work
   */
+  Serial.begin(115200); // will change baud rate of MIDI traffic to 115200 (baud rate of ttymidi)
+  Serial.println("Start SetUp");
+
   pinMode(SPI_CLK, OUTPUT);
   pinMode(SPI_CS, OUTPUT);
   pinMode(SPI_MOSI, OUTPUT);
-  Serial.begin(115200); // will change baud rate of MIDI traffic to 115200 (baud rate of ttymidi)
   state = 0;
 
   // configure MAX7219
@@ -85,7 +105,7 @@ void setup() {
   /* Turn off power-saving mode on startup */
   spiTransfer(OP_SHUTDOWN, 1);
   /* Set the brightness to a medium values */
-  spiTransfer(OP_INTENSITY, 8);
+  spiTransfer(OP_INTENSITY, 1);
   /* Clear the display */
   for (int i = 0; i < 8; i++) {
     spiTransfer(i + 1, 0);
@@ -93,20 +113,19 @@ void setup() {
 
   // test
   playMatrix();
-  delay(5000);
+  delay(10000);
 
 
-
-  // TODO: error when more than one LED on per row; perhaps because RSET shoudl be 120k Ohm but it 120 Ohm?
+  //  //TODO: error when more than one LED on per row; perhaps because RSET shoudl be 120k Ohm but it 120 Ohm ?
   //  // test: turn all LEDs ON
   //  for (int i = 0; i < 5; i++) {
   //    for (int j = 0; j < 5; j++) {
   //      LED_MATRIX[i][j] = 1;
+  //      playMatrix();
+  //      delay(1000);
   //    }
   //  }
-  //  playMatrix();
-  //  delay(5000);
-  //
+
   //  // test: turn all LEDs OFF
   //  for (int i = 0; i < 5; i++) {
   //    for (int j = 0; j < 5; j++) {
@@ -114,6 +133,8 @@ void setup() {
   //    }
   //  }
   //  playMatrix();
+
+  Serial.println("End SetUp");
 }
 
 
