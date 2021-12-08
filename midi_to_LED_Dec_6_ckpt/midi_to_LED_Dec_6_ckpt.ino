@@ -102,7 +102,10 @@ void setup() {
   for (int x = 0; x < nrOfMotors; x++)  {
     stepperPtrArray[x] = new AccelStepper(4, MotorPins[x][0], MotorPins[x][1], MotorPins[x][2], MotorPins[x][3]);
     stepperPtrArray[x]->setMaxSpeed(1000);
+    stepperPtrArray[x]->setSpeed(0);
   }
+
+
   
   pinMode(SPI_CLK, OUTPUT);
   pinMode(SPI_CS, OUTPUT);
@@ -158,6 +161,7 @@ void loop() {
   /*
      Read and decode MIDI message with a state machine
   */
+
   if (Serial.available() > 0) {
     // read the incoming byte
     incomingByte = Serial.read();
@@ -218,15 +222,19 @@ void loop() {
         break;
     }
   }
+  
+  for(int i =0; i< 8; i++){
+    stepperPtrArray[i] -> runSpeed();
+  }
 }
 
 
-void updateMotor(int instrument, byte velocity, int down){
+void updateMotor(int instrument, byte velocity){
   if(count[instrument] > 0){
     count[instrument] == 0;
   }
   for(int i =0; i< 8; i++){
-    count[i] += 1;
+    count[i] = count[i]+1;
 
     //if this channel (instrument) has been played
     if(count[i] < 30){
@@ -236,7 +244,6 @@ void updateMotor(int instrument, byte velocity, int down){
     else{
       stepperPtrArray[i] -> setSpeed(0);
     }
-    stepperPtrArray[i] -> runSpeed();
   }
 }
 
@@ -246,7 +253,7 @@ void updateVisualizer(int channel, byte note, byte velocity, int down) {
   //instrument is from 0 to 7
   int instrument = channel % 8;
 
-  updateMotor(instrument, velocity, down);
+  updateMotor(instrument, velocity);
 
   switch (note % 12) {
     case 0:
