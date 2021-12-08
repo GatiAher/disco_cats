@@ -1,7 +1,7 @@
 /*
    MIDI File to LED lightshow
    Gati Aher
-   Nov 11, 2021
+   Nov 17, 2021
 
   Use the MAX7219 chip (it has a latch signal so there is no flicker and rows are all equally bright)
 
@@ -21,18 +21,6 @@ int channel = 1; // MIDI channel to respond to (in this case channel 2) change t
 //int channel; // Any channel
 
 
-//int LED_MATRIX[ 8 ][ 8 ] = {
-//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 1
-//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 2
-//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 3
-//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 4
-//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 5
-//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 6
-//  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 7
-//  {0, 0, 0, 0, 0, 0, 0, 0}  // Instrument 8
-//};
-
-
 
 int LED_MATRIX[ 8 ][ 8 ] = {
   {0, 0, 0, 0, 1, 0, 0, 0}, // Instrument 1
@@ -45,17 +33,6 @@ int LED_MATRIX[ 8 ][ 8 ] = {
   {0, 0, 0, 0, 0, 0, 0, 0}  // Instrument 8
 };
 
-
-//int LED_MATRIX[ 8 ][ 8 ] = {
-//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 1
-//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 2
-//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 3
-//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 4
-//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 5
-//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 6
-//  {1, 1, 1, 1, 1, 1, 1, 1}, // Instrument 7
-//  {1, 1, 1, 1, 1, 1, 1, 1}  // Instrument 8
-//};
 
 // MIDI decoder state machine
 int state = 0; // state machine variable 0 = command waiting : 1 = note waiting : 2 = velocity waiting
@@ -87,7 +64,6 @@ void setup() {
      Initialize inputs and outputs, MAX7219 config, begin serial, and test that LEDs work
   */
   Serial.begin(115200); // will change baud rate of MIDI traffic to 115200 (baud rate of ttymidi)
-  Serial.println("Start SetUp");
 
   pinMode(SPI_CLK, OUTPUT);
   pinMode(SPI_CS, OUTPUT);
@@ -133,8 +109,6 @@ void setup() {
   //    }
   //  }
   //  playMatrix();
-
-  Serial.println("End SetUp");
 }
 
 
