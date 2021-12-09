@@ -110,8 +110,6 @@ void setup() {
   debounced_seed_selection(BUTTON_G, LED_G, selectionStateG, buttonStateG, lastButtonStateG, 'g');
   debounced_seed_selection(BUTTON_H, LED_H, selectionStateH, buttonStateH, lastButtonStateH, 'h');
   delay(1000);
-
-  Serial.println("Start Loop");
 }
 
 void debounced_seed_selection(int buttonPin, int ledPin, int &selectionState, int &buttonState, int &lastButtonState, char c) {
