@@ -10,31 +10,39 @@
   3. Shift data onto hardware MAX7219 chip, 16-bit shift register with SPI of 4 wires (GND, CLK, CS, DIN)
 */
 
+///////////////
+// MIDI VARS //
+///////////////
+
 byte incomingByte;
 byte note;
 byte velocity;
 int noteDown = LOW;
 int channel = 1; // MIDI channel to respond to (in this case channel 2) change this to play different channel
 
+// MIDI decoder state machine
+int state = 0; // state machine variable 0 = command waiting : 1 = note waiting : 2 = velocity waiting
+
+/////////////////////////
+// LED + MAX CHIP VARS //
+/////////////////////////
+
 int LED_MATRIX[ 8 ][ 8 ] = {
   {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 1
-  {0, 1, 0, 0, 0, 0, 0, 0}, // Instrument 2
-  {0, 1, 0, 0, 0, 0, 0, 0}, // Instrument 3
-  {0, 1, 0, 0, 0, 0, 0, 0}, // Instrument 4
+  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 2
+  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 3
+  {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 4
   {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 5
   {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 6
   {0, 0, 0, 0, 0, 0, 0, 0}, // Instrument 7
   {0, 0, 0, 0, 0, 0, 0, 0}  // Instrument 8
 };
 
-// MIDI decoder state machine
-int state = 0; // state machine variable 0 = command waiting : 1 = note waiting : 2 = velocity waiting
-
 
 //SPI pins for MAX7219
-#define SPI_CLK 11 // CLOCK (on positive edge of CLK, copy data across shift register)  
-#define SPI_CS 10 // LOAD (on positive edge of CS, copy shift register data to LED driver)
-#define SPI_MOSI 12 // Master Output Seconday Input (data signal, MAX7219 is a secondary device)
+#define SPI_CLK 39 // CLOCK (on positive edge of CLK, copy data across shift register)  
+#define SPI_CS 41 // LOAD (on positive edge of CS, copy shift register data to LED driver)
+#define SPI_MOSI 43 // Master Output Seconday Input (data signal, MAX7219 is a secondary device)
 
 //opcodes for MAX7219
 #define OP_NOOP   0
@@ -52,15 +60,51 @@ int state = 0; // state machine variable 0 = command waiting : 1 = note waiting 
 #define OP_SHUTDOWN    12
 #define OP_DISPLAYTEST 15
 
+
+////////////////
+// MOTOR VARS //
+////////////////
+
+#include <AccelStepper.h>
+
+//Array for IO pin number for each stepper motor
+uint8_t MotorPins[][10] = {
+  {11, 10, 9, 8}, {7, 6, 5, 4}, {14, 15, 16, 17}, {18, 19, 20, 21},
+  {22, 24, 26, 28}, {23, 25, 27, 29}, {30, 32, 34, 36}, {31, 33, 35, 37},
+  {42, 44, 46, 48}
+};
+
+// Define the AccelStepper interface type; 4 wire motor in half step mode:
+#define MotorInterfaceType 4
+
+const int nrOfMotors = 9;
+
+AccelStepper *stepperPtrArray[nrOfMotors];
+
+//each represents 8 motors. Counts the time since the last time the channel was played.
+int count[nrOfMotors] = {100, 100, 100, 100, 100, 100, 100, 100};
+
+int songEnd = 0;
+
 void setup() {
   /*
      Initialize inputs and outputs, MAX7219 config, begin serial, and test that LEDs work
   */
+
+  ////////////////
+  // MIDI SETUP //
+  ////////////////
+
+  Serial.begin(115200); // will change baud rate of MIDI traffic to 115200 (baud rate of ttymidi)
+  state = 0;
+
+  //////////////////////////
+  // LED + MAX CHIP SETUP //
+  //////////////////////////
+
   pinMode(SPI_CLK, OUTPUT);
   pinMode(SPI_CS, OUTPUT);
   pinMode(SPI_MOSI, OUTPUT);
-  Serial.begin(115200); // will change baud rate of MIDI traffic to 115200 (baud rate of ttymidi)
-  state = 0;
 
   // configure MAX7219
   digitalWrite(SPI_CS, HIGH);
@@ -81,7 +125,7 @@ void setup() {
 
   // test
   playMatrix();
-  delay(100);
+  delay(500);
 
   // test: turn all LEDs OFF
   for (int i = 0; i < 5; i++) {
@@ -111,6 +155,16 @@ void setup() {
   }
   playMatrix();
   delay(100);
+
+  /////////////////
+  // MOTOR SETUP //
+  /////////////////
+  // connect and configure the stepper motors to their IO pins
+  for (int x = 0; x < nrOfMotors; x++)  {
+    stepperPtrArray[x] = new AccelStepper(4, MotorPins[x][0], MotorPins[x][1], MotorPins[x][2], MotorPins[x][3]);
+    stepperPtrArray[x]->setMaxSpeed(1000);
+    stepperPtrArray[x]->setSpeed(0);
+  }
 }
 
 
@@ -166,7 +220,7 @@ void loop() {
           if (velocity == 0) {
             noteDown = LOW;
           }
-          updateMatrix(channel, note, velocity, noteDown);
+          updateVisualizer(channel, note, velocity, noteDown);
         }
         playMatrix();
         state = 0;  // reset state machine
@@ -177,29 +231,69 @@ void loop() {
         break;
     }
   }
-}
 
+  for (int i = 0; i < nrOfMotors; i++) {
+    stepperPtrArray[i] -> runSpeed();
+  }
 
-void updateMatrix(int channel, byte note, byte velocity, int down) {
-  int instrument = channel % 8;
-
-  // if instrument already has two notes on, before turning next note on,
-  // turn other notes off (LED can only power 3 LEDs on per row)
-  int count = 0;
-  if (down) {
-    for (int i = 0; i < 8; i++) {
-      if (LED_MATRIX[instrument][i]) {
-        count += 1;
+  // check if song is over by checking if all LEDs are off
+  // for a duration of time
+  int is_all_off = 1;
+  for (int i = 0; i < 8; i++) {
+    if (is_all_off == 1) {
+      for (int j = 0; j < 8; j++) {
+        if (LED_MATRIX[i][j]) {
+          is_all_off = 0;
+          break;
+        };
       }
     }
   }
-  if (count > 2) {
-    for (int i = 0; i < 8; i++) {
-      LED_MATRIX[instrument][i] = 0;
+  if (is_all_off == 1) {
+    songEnd += 1;
+  } else {
+    songEnd = 0;
+  }
+  if (songEnd > 30) {
+    for (int i = 0; i < nrOfMotors; i++) {
+      stepperPtrArray[i] -> setSpeed(0);
     }
   }
+}
 
-  // update Matrix with new note
+
+void updateMotor(int instrument, byte velocity) {
+  if (count[instrument] > 0) {
+    count[instrument] = 0;
+  }
+
+  for (int i = 0; i < 8; i++) {
+    count[i] = count[i] + 1;
+
+    //if this channel (instrument) has been played
+    if (count[i] < 30) {
+      stepperPtrArray[i] -> setSpeed(600);
+      if (i == 7) {
+        stepperPtrArray[i + 1] -> setSpeed(-600);
+      }
+    }
+    //if this channel (instrument) hasn't been played
+    else {
+      stepperPtrArray[i] -> setSpeed(0);
+      if (i == 7) {
+        stepperPtrArray[i + 1] -> setSpeed(0);
+      }
+    }
+  }
+}
+
+
+void updateVisualizer(int channel, byte note, byte velocity, int down) {
+  //instrument is from 0 to 7
+  int instrument = channel % 8;
+
+  updateMotor(instrument, velocity);
+
   switch (note % 12) {
     case 0:
     // note C
@@ -264,7 +358,6 @@ void updateMatrix(int channel, byte note, byte velocity, int down) {
       // not a note -- do nothing
       break;
   }
-
 }
 
 
