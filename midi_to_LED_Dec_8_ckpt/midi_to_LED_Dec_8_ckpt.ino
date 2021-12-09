@@ -40,9 +40,14 @@ int LED_MATRIX[ 8 ][ 8 ] = {
 
 
 //SPI pins for MAX7219
-#define SPI_CLK 39 // CLOCK (on positive edge of CLK, copy data across shift register)  
-#define SPI_CS 41 // LOAD (on positive edge of CS, copy shift register data to LED driver)
-#define SPI_MOSI 43 // Master Output Seconday Input (data signal, MAX7219 is a secondary device)
+//#define SPI_CLK 39 // CLOCK (on positive edge of CLK, copy data across shift register)  
+//#define SPI_CS 41 // LOAD (on positive edge of CS, copy shift register data to LED driver)
+//#define SPI_MOSI 43 // Master Output Seconday Input (data signal, MAX7219 is a secondary device)
+
+#define SPI_CLK 10 // CLOCK (on positive edge of CLK, copy data across shift register)  
+#define SPI_CS 11 // LOAD (on positive edge of CS, copy shift register data to LED driver)
+#define SPI_MOSI 12 // Master Output Seconday Input (data signal, MAX7219 is a secondary device)
+
 
 //opcodes for MAX7219
 #define OP_NOOP   0
@@ -117,7 +122,7 @@ void setup() {
   /* Turn off power-saving mode on startup */
   spiTransfer(OP_SHUTDOWN, 1);
   /* Set the brightness to a medium values */
-  spiTransfer(OP_INTENSITY, 8);
+  spiTransfer(OP_INTENSITY, 1);
   /* Clear the display */
   for (int i = 0; i < 8; i++) {
     spiTransfer(i + 1, 0);
@@ -128,8 +133,8 @@ void setup() {
   delay(500);
 
   // test: turn all LEDs OFF
-  for (int i = 0; i < 5; i++) {
-    for (int j = 0; j < 5; j++) {
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
       LED_MATRIX[i][j] = 0;
     }
   }
@@ -137,19 +142,19 @@ void setup() {
 
   //TODO: error when more than one LED on per row; perhaps because RSET shoudl be 120k Ohm but it 120 Ohm ?
   // test: turn all LEDs ON
-  for (int i = 0; i < 5; i++) {
-    for (int j = 0; j < 5; j++) {
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
       LED_MATRIX[i][j] = 1;
       playMatrix();
       LED_MATRIX[i][j] = 0;
-      delay(100);
+      delay(500);
     }
   }
   delay(100);
 
   // test: turn all LEDs OFF
-  for (int i = 0; i < 5; i++) {
-    for (int j = 0; j < 5; j++) {
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
       LED_MATRIX[i][j] = 0;
     }
   }
@@ -378,7 +383,7 @@ void playMatrix() {
     // determine data value from LED_MATRIX cells for given row
     for (int j = 0; j < 8; j++) {
       data *= 2; // double result so far
-      if (j < 5 and LED_MATRIX[i][j]) data++; // add 1 if needed
+      if (LED_MATRIX[i][j]) data++; // add 1 if needed
     }
 
     spiTransfer(opcode, data);
