@@ -182,6 +182,24 @@ void loop() {
 
 void updateMatrix(int channel, byte note, byte velocity, int down) {
   int instrument = channel % 8;
+
+  // if instrument already has two notes on, before turning next note on,
+  // turn other notes off (LED can only power 3 LEDs on per row)
+  int count = 0;
+  if (down) {
+    for (int i = 0; i < 8; i++) {
+      if (LED_MATRIX[instrument][i]) {
+        count += 1;
+      }
+    }
+  }
+  if (count > 2) {
+    for (int i = 0; i < 8; i++) {
+      LED_MATRIX[instrument][i] = 0;
+    }
+  }
+
+  // update Matrix with new note
   switch (note % 12) {
     case 0:
     // note C
