@@ -68,6 +68,7 @@ Install `TiMidity++`
 ### Run
 
 Process to connect Ttymidi to TiMidity++, play music, and send file to Arduino
+
 ```bash
 ttymidi -s /dev/ttyACM0
 timidity -iA
