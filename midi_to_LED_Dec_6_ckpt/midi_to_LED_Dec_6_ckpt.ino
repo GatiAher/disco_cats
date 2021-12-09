@@ -22,9 +22,10 @@
 
 
 //Array for IO pin number for each stepper motor
-uint8_t MotorPins[][9] = {
+uint8_t MotorPins[][10] = {
   {11, 10, 9, 8}, {7, 6, 5, 4}, {14, 15, 16, 17}, {18, 19, 20, 21},
-  {22, 24, 26, 28}, {23, 25, 27, 29}, {30, 32, 34, 36}, {31, 33, 35, 37}
+  {22, 24, 26, 28}, {23, 25, 27, 29}, {30, 32, 34, 36}, {31, 33, 35, 37},
+  {38, 40, 42, 44}
 };
 
 
@@ -33,7 +34,7 @@ uint8_t MotorPins[][9] = {
 #define MotorInterfaceType 4
 
 
-const int nrOfMotors = 8;
+const int nrOfMotors = 9;
 
 AccelStepper *stepperPtrArray[nrOfMotors];
 
@@ -223,7 +224,7 @@ void loop() {
     }
   }
   
-  for(int i =0; i< 8; i++){
+  for(int i =0; i< nrOfMotors; i++){
     stepperPtrArray[i] -> runSpeed();
   }
 }
@@ -231,18 +232,25 @@ void loop() {
 
 void updateMotor(int instrument, byte velocity){
   if(count[instrument] > 0){
-    count[instrument] == 0;
+    count[instrument] = 0;
   }
+  
   for(int i =0; i< 8; i++){
     count[i] = count[i]+1;
 
     //if this channel (instrument) has been played
     if(count[i] < 30){
       stepperPtrArray[i] -> setSpeed(800);
+      if (i==7){
+        stepperPtrArray[i+1] -> setSpeed(-800);
+      }
     }
     //if this channel (instrument) hasn't been played
     else{
       stepperPtrArray[i] -> setSpeed(0);
+      if (i==7){
+        stepperPtrArray[i+1] -> setSpeed(0);
+      }
     }
   }
 }
