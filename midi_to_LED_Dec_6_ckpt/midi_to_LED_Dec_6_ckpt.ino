@@ -6,7 +6,7 @@
 
   Given MIDI stream, lights correspond to pitch of notes played by instrument on channel 1
   **Added Motors**
-  
+
   0. Initialize inputs and outputs, MAX7219 config, begin serial, and test that LEDs work
   1. Read and decode MIDI message with a state machine
   2. Update matrix state and move the motor
@@ -37,8 +37,11 @@ const int nrOfMotors = 8;
 
 AccelStepper *stepperPtrArray[nrOfMotors];
 
-//each represents 8 motors. Counts the time since the last time the channel was played. 
-int count[nrOfMotors]={100, 100, 100, 100, 100, 100, 100, 100}; 
+//each represents 8 motors. Counts the time since the last time the channel was played.
+int count[nrOfMotors] = {100, 100, 100, 100, 100, 100, 100, 100};
+
+int songEnd = 0;
+
 
 byte incomingByte;
 byte note;
@@ -106,14 +109,14 @@ void setup() {
   }
 
 
-  
+
   pinMode(SPI_CLK, OUTPUT);
   pinMode(SPI_CS, OUTPUT);
   pinMode(SPI_MOSI, OUTPUT);
   Serial.begin(115200); // will change baud rate of MIDI traffic to 115200 (baud rate of ttymidi)
   state = 0;
 
-  
+
   // configure MAX7219
   digitalWrite(SPI_CS, HIGH);
   /* Turn off display test mode */
@@ -213,7 +216,7 @@ void loop() {
           updateVisualizer(channel, note, velocity, noteDown);
         }
         playMatrix();
-        
+
         state = 0;  // reset state machine
         break;
 
@@ -222,97 +225,126 @@ void loop() {
         break;
     }
   }
-  
-  for(int i =0; i< 8; i++){
+
+  for (int i = 0; i < 8; i++) {
     stepperPtrArray[i] -> runSpeed();
   }
+
+  // check if song is over by checking if all LEDs are off
+  // for a duration of time
+  int is_all_off = 1;
+  for (int i = 0; i < 8; i++) {
+    if (is_all_off == 1) {
+      for (int j = 0; j < 8; j++) {
+        if (LED_MATRIX[i][j]) {
+          is_all_off = 0;
+          break;
+        };
+      }
+    }
+  }
+  if (is_all_off == 1) {
+    songEnd += 1;
+  } else {
+    songEnd = 0;
+  }
+  if (songEnd > 30) {
+    for (int i = 0; i < 8; i++) {
+      stepperPtrArray[i] -> setSpeed(0);
+    }
+  }
+
+
 }
 
 
-void updateMotor(int instrument, byte velocity){
-  if(count[instrument] > 0){
-    count[instrument] == 0;
+void updateMotor(int instrument, byte velocity) {
+  if (count[instrument] > 0) {
+    count[instrument] = 0;
   }
-  for(int i =0; i< 8; i++){
-    count[i] = count[i]+1;
+  for (int i = 0; i < 8; i++) {
+    count[i] = count[i] + 1;
 
     //if this channel (instrument) has been played
-    if(count[i] < 30){
-      stepperPtrArray[i] -> setSpeed(800);
+    if (count[i] < 30) {
+      stepperPtrArray[i] -> setSpeed(500);
     }
     //if this channel (instrument) hasn't been played
-    else{
+    else {
       stepperPtrArray[i] -> setSpeed(0);
     }
   }
 }
 
 
-  
+
 void updateVisualizer(int channel, byte note, byte velocity, int down) {
   //instrument is from 0 to 7
   int instrument = channel % 8;
 
   updateMotor(instrument, velocity);
 
+  // if matrix already has two LEDs on in a row,
+  // turn all LEDs in that row 
+
   switch (note % 12) {
     case 0:
     // note C
     case 1:
       // note C#
-      for (int i = 0; i < 8; i++) {
-        LED_MATRIX[instrument][7] = (down) ? 1 : 0;
-      }
+      //      for (int i = 0; i </ 8; i++) {
+      LED_MATRIX[instrument][7] = (down) ? 1 : 0;
+      //      }/
       break;
 
     case 2:
     // note D
     case 3:
       // note D#
-      for (int i = 0; i < 2; i++) {
-        LED_MATRIX[instrument][1] = (down) ? 1 : 0;
-      }
+      //      for /(int i = 0; i < 2; i++) {
+      LED_MATRIX[instrument][1] = (down) ? 1 : 0;
+      //      }/
       break;
 
     case 4:
       // note E
-      for (int i = 0; i < 3; i++) {
-        LED_MATRIX[instrument][2] = (down) ? 1 : 0;
-      }
+      //      for /(int i = 0; i < 3; i++) {
+      LED_MATRIX[instrument][2] = (down) ? 1 : 0;
+      //      }/
       break;
 
     case 5:
     // note F
     case 6:
       // note F#
-      for (int i = 0; i < 4; i++) {
-        LED_MATRIX[instrument][3] = (down) ? 1 : 0;
-      }
+      //      for /(int i = 0; i < 4; i++) {
+      LED_MATRIX[instrument][3] = (down) ? 1 : 0;
+      //      }/
       break;
 
     case 7:
     // note G
     case 8:
       // note G#
-      for (int i = 0; i < 5; i++) {
-        LED_MATRIX[instrument][4] = (down) ? 1 : 0;
-      }
+      //      for /(int i = 0; i < 5; i++) {
+      LED_MATRIX[instrument][4] = (down) ? 1 : 0;
+      //      }/
       break;
 
     case 9:
     // note A
     case 10:
       // note A#
-      for (int i = 0; i < 6; i++) {
-        LED_MATRIX[instrument][5] = (down) ? 1 : 0;
-      }
+      //      for /(int i = 0; i < 6; i++) {
+      LED_MATRIX[instrument][5] = (down) ? 1 : 0;
+      //      }/
       break;
 
     case 11:
       // note B
-      for (int i = 0; i < 7; i++) {
-        LED_MATRIX[instrument][6] = (down) ? 1 : 0;
-      }
+      //      for /(int i = 0; i < 7; i++) {
+      LED_MATRIX[instrument][6] = (down) ? 1 : 0;
+      //      }/
       break;
 
     default:
