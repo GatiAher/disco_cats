@@ -40,6 +40,7 @@ AccelStepper *stepperPtrArray[10];
 
 
 void setup() {
+  Serial.begin(115200);
 //
 //  stepperPtrArray[0] = new AccelStepper(4, motor1Pin1, motor1Pin2, motor1Pin3, motor1Pin4);
 //  stepperPtrArray[1] = new AccelStepper(4, motor2Pin1, motor2Pin2, motor2Pin3, motor2Pin4);
@@ -75,6 +76,8 @@ void loop() {
   // Step the motor with constant speed as set by setSpeed():
   for (uint8_t x = 0; x < 9; x++)  {
     stepperPtrArray[x] -> runSpeed();
+    Serial.println(x);
+    delay(0);
   }
 
 //  stepper2.runSpeed();

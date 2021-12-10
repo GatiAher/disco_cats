@@ -40,13 +40,13 @@ int LED_MATRIX[ 8 ][ 8 ] = {
 
 
 //SPI pins for MAX7219
-//#define SPI_CLK 39 // CLOCK (on positive edge of CLK, copy data across shift register)  
-//#define SPI_CS 41 // LOAD (on positive edge of CS, copy shift register data to LED driver)
-//#define SPI_MOSI 43 // Master Output Seconday Input (data signal, MAX7219 is a secondary device)
+#define SPI_CLK 39 // CLOCK (on positive edge of CLK, copy data across shift register)  
+#define SPI_CS 41 // LOAD (on positive edge of CS, copy shift register data to LED driver)
+#define SPI_MOSI 43 // Master Output Seconday Input (data signal, MAX7219 is a secondary device)
 
-#define SPI_CLK 10 // CLOCK (on positive edge of CLK, copy data across shift register)  
-#define SPI_CS 11 // LOAD (on positive edge of CS, copy shift register data to LED driver)
-#define SPI_MOSI 12 // Master Output Seconday Input (data signal, MAX7219 is a secondary device)
+//#define SPI_CLK 10 // CLOCK (on positive edge of CLK, copy data across shift register)
+//#define SPI_CS 11 // LOAD (on positive edge of CS, copy shift register data to LED driver)
+//#define SPI_MOSI 12 // Master Output Seconday Input (data signal, MAX7219 is a secondary device)
 
 
 //opcodes for MAX7219
@@ -80,7 +80,7 @@ uint8_t MotorPins[][10] = {
 };
 
 // Define the AccelStepper interface type; 4 wire motor in half step mode:
-#define MotorInterfaceType 4
+#define MotorInterfaceType 8
 
 const int nrOfMotors = 9;
 
@@ -141,7 +141,7 @@ void setup() {
   playMatrix();
 
   //TODO: error when more than one LED on per row; perhaps because RSET shoudl be 120k Ohm but it 120 Ohm ?
-  // test: turn all LEDs ON
+  // test: turn all LEDs ON  
   for (int i = 0; i < 8; i++) {
     for (int j = 0; j < 8; j++) {
       LED_MATRIX[i][j] = 1;
@@ -166,7 +166,7 @@ void setup() {
   /////////////////
   // connect and configure the stepper motors to their IO pins
   for (int x = 0; x < nrOfMotors; x++)  {
-    stepperPtrArray[x] = new AccelStepper(4, MotorPins[x][0], MotorPins[x][1], MotorPins[x][2], MotorPins[x][3]);
+    stepperPtrArray[x] = new AccelStepper(8, MotorPins[x][0], MotorPins[x][1], MotorPins[x][2], MotorPins[x][3]);
     stepperPtrArray[x]->setMaxSpeed(1000);
     stepperPtrArray[x]->setSpeed(0);
   }
@@ -226,6 +226,9 @@ void loop() {
             noteDown = LOW;
           }
           updateVisualizer(channel, note, velocity, noteDown);
+        }
+        for (int i = 0; i < nrOfMotors; i++) {
+          stepperPtrArray[i] -> runSpeed();
         }
         playMatrix();
         state = 0;  // reset state machine
@@ -379,7 +382,8 @@ void playMatrix() {
   // determine OP_DIGITX (row to give GND to)
   for (int i = 0; i < 8; i++) {
     opcode = i + 1;
-
+    
+    data = 0;
     // determine data value from LED_MATRIX cells for given row
     for (int j = 0; j < 8; j++) {
       data *= 2; // double result so far

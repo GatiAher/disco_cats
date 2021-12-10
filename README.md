@@ -71,7 +71,9 @@ Process to connect Ttymidi to TiMidity++, play music, and send file to Arduino
 
 ```bash
 ttymidi -s /dev/ttyACM0
+
 timidity -iA
+
 aconnect 128:0 129:0
 aplaymidi -p 128:1 gen/rock_candy_geralt.mid & timidity -Os gen/rock_candy_geralt.mid
 ```
