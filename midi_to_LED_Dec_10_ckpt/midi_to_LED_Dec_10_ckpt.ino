@@ -4,6 +4,7 @@
    Dec 10, 2021
 
   Use 8 milis(every 16 ms) commands to run one of the 8 rows every 2ms
+  If no message has been recieved in 1s, turn everything off
 
   Use the MAX7219 chip (it has a latch signal so there is no flicker and rows are all equally bright)
   Given MIDI stream, lights correspond to pitch of notes played by instrument on channel 1
@@ -24,7 +25,8 @@ int noteDown = LOW;
 int channel = 1; // MIDI channel to respond to (in this case channel 2) change this to play different channel
 
 int row_num = 0;
-unsigned long startMillis = millis();
+unsigned long rowMillis = millis();
+unsigned long lastMessageMillis = millis();
 
 // MIDI decoder state machine
 int state = 0; // state machine variable 0 = command waiting : 1 = note waiting : 2 = velocity waiting
@@ -134,39 +136,6 @@ void setup() {
     spiTransfer(i + 1, 0);
   }
 
-  // test
-  //playMatrix();
-  //  delay(500);
-
-  //  // test: turn all LEDs OFF
-  //  for (int i = 0; i < 8; i++) {
-  //    for (int j = 0; j < 8; j++) {
-  //      LED_MATRIX[i][j] = 0;
-  //    }
-  //  }
-  //  //playMatrix();
-
-  //TODO: error when more than one LED on per row; perhaps because RSET shoudl be 120k Ohm but it 120 Ohm ?
-  // test: turn all LEDs ON
-  //  for (int i = 0; i < 8; i++) {
-  //    for (int j = 0; j < 8; j++) {
-  //      LED_MATRIX[i][j] = 1;
-  //      //playMatrix();
-  //      LED_MATRIX[i][j] = 0;
-  //      delay(500);
-  //    }
-  //  }
-  //  delay(100);
-
-  // test: turn all LEDs OFF
-  //  for (int i = 0; i < 8; i++) {
-  //    for (int j = 0; j < 8; j++) {
-  //      LED_MATRIX[i][j] = 0;
-  //    }
-  //  }
-  //  //playMatrix();
-  //  delay(100);
-
   /////////////////
   // MOTOR SETUP //
   /////////////////
@@ -188,10 +157,10 @@ void loop() {
     incomingByte = Serial.read();
     switch (state) {
       case 0:
+        // record time of last message
+        lastMessageMillis = millis();
 
-        //        look for as status - byte, our channel, note on
-        //        if (incomingByte == (144 | channel)) {
-        // check for NOTE_ON
+        // look for as status - byte, our channel, note on
         if ((incomingByte & 0xf0) == 0x90) {
           // take last 4 bits
           channel = incomingByte & 0x0f;
@@ -199,10 +168,7 @@ void loop() {
           state = 1;
         }
 
-        //        look for as status - byte, our channel, note off
-        //        if (incomingByte == (128 | channel)) {
-
-        // check for NOTE_OFF
+        // look for as status - byte, our channel, note off
         if ((incomingByte & 0xf0) == 0x80) {
           // take last 4 bits
           channel = incomingByte & 0x0f;
@@ -212,6 +178,9 @@ void loop() {
         break;
 
       case 1:
+        // record time of last message
+        lastMessageMillis = millis();
+
         // get the note to play or stop
         if (incomingByte < 128) {
           note = incomingByte;
@@ -220,9 +189,13 @@ void loop() {
         else {
           state = 0;  // reset state machine as this should be a note number
         }
+
         break;
 
       case 2:
+        // record time of last message
+        lastMessageMillis = millis();
+
         // get the velocity
         if (incomingByte < 128) {
           velocity = incomingByte;
@@ -236,9 +209,9 @@ void loop() {
 
         int row = 0;
         while (row < 8) {
-          if (millis() - startMillis > 2) {
+          if (millis() - rowMillis > 2) {
             playMatrix(row);
-            startMillis = millis();
+            rowMillis = millis();
             row++;
           }
           for (int i = 0; i < nrOfMotors; i++) {
@@ -254,29 +227,21 @@ void loop() {
     }
   }
 
+  // run all motors
   for (int i = 0; i < nrOfMotors; i++) {
     stepperPtrArray[i] -> runSpeed();
   }
 
-  // check if song is over by checking if all LEDs are off
-  // for a duration of time
-  int is_all_off = 1;
-  for (int i = 0; i < 8; i++) {
-    if (is_all_off == 1) {
+  // check if song is over by checking
+  // if time since last message is greater than 1 second
+  if (millis() - lastMessageMillis > 1000) {
+    // turn off all LEDs
+    for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 8; j++) {
-        if (LED_MATRIX[i][j]) {
-          is_all_off = 0;
-          break;
-        };
+        LED_MATRIX[i][j] = 0;
       }
     }
-  }
-  if (is_all_off == 1) {
-    songEnd += 1;
-  } else {
-    songEnd = 0;
-  }
-  if (songEnd > 30) {
+    // turn off all motors
     for (int i = 0; i < nrOfMotors; i++) {
       stepperPtrArray[i] -> setSpeed(0);
     }
@@ -311,69 +276,58 @@ void updateMotor(int instrument, byte velocity) {
 
 
 void updateVisualizer(int channel, byte note, byte velocity, int down) {
-  //instrument is from 0 to 7
+  // instrument is from 0 to 7
   int instrument = channel % 8;
 
   updateMotor(instrument, velocity);
 
   switch (note % 12) {
     case 0:
-    // note C
+      // note C
+      LED_MATRIX[instrument][0] = (down) ? 1 : 0;
+      break
+
     case 1:
       // note C#
-      for (int i = 0; i < 8; i++) {
-        LED_MATRIX[instrument][7] = (down) ? 1 : 0;
-      }
+      LED_MATRIX[instrument][7] = (down) ? 1 : 0;
       break;
 
     case 2:
     // note D
     case 3:
       // note D#
-      for (int i = 0; i < 2; i++) {
-        LED_MATRIX[instrument][1] = (down) ? 1 : 0;
-      }
+      LED_MATRIX[instrument][1] = (down) ? 1 : 0;
       break;
 
     case 4:
       // note E
-      for (int i = 0; i < 3; i++) {
-        LED_MATRIX[instrument][2] = (down) ? 1 : 0;
-      }
+      LED_MATRIX[instrument][2] = (down) ? 1 : 0;
       break;
 
     case 5:
     // note F
     case 6:
       // note F#
-      for (int i = 0; i < 4; i++) {
-        LED_MATRIX[instrument][3] = (down) ? 1 : 0;
-      }
+      LED_MATRIX[instrument][3] = (down) ? 1 : 0;
       break;
 
     case 7:
     // note G
     case 8:
       // note G#
-      for (int i = 0; i < 5; i++) {
-        LED_MATRIX[instrument][4] = (down) ? 1 : 0;
-      }
+      LED_MATRIX[instrument][4] = (down) ? 1 : 0;
       break;
 
     case 9:
     // note A
     case 10:
       // note A#
-      for (int i = 0; i < 6; i++) {
-        LED_MATRIX[instrument][5] = (down) ? 1 : 0;
-      }
+      LED_MATRIX[instrument][5] = (down) ? 1 : 0;
       break;
 
     case 11:
       // note B
-      for (int i = 0; i < 7; i++) {
-        LED_MATRIX[instrument][6] = (down) ? 1 : 0;
-      }
+      LED_MATRIX[instrument][6] = (down) ? 1 : 0;
       break;
 
     default:
@@ -386,17 +340,13 @@ void updateVisualizer(int channel, byte note, byte velocity, int down) {
 void playMatrix(int row) {
   /*
      Shift data onto hardware
-     For each row of matrix:
+     For a row of matrix:
      1. Determine opcode (8 bits, last 4 bits are MAX7219 opcode)
      2. Determine data (8 bits, cells of row to light up)
   */
 
   //byte opcode = 0;
   byte data = 0;
-
-  // determine OP_DIGITX (row to give GND to)
-  //for (int i = 0; i < 8; i++) {
-  // opcode = i + 1;
 
   // determine data value from LED_MATRIX cells for given row
   for (int j = 0; j < 8; j++) {
