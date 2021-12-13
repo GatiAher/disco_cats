@@ -201,7 +201,7 @@ def main(seri="/dev/ttyACM1", sero="/dev/ttyACM0"):
 
         if state == STATE_INTERP:
             # 2. Select embeddings and generate new music
-            num_bars = 10
+            num_bars = 20
             temperature = 0.2
 
             num_bars_each = int(num_bars/(len(data_bytes) - 1))
