@@ -68,7 +68,7 @@ void loop() {
     
   // Set the speed of the motor in steps per second:
   for (uint8_t x = 0; x < 9; x++)  {
-    stepperPtrArray[x] -> setSpeed(550);
+    stepperPtrArray[x] -> setSpeed(600);
   }
 //  stepper2.setSpeed(500);
 //  stepper3.setSpeed(500);

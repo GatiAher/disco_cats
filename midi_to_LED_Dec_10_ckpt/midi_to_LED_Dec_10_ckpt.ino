@@ -3,7 +3,8 @@
    Gati Aher
    Dec 10, 2021
 
-  Use 8 milis(every 16 ms) commands to run one of the 8 rows every 2ms
+  Use 8 milis (every 16 ms) commands to run one of the 8 rows every 2ms
+  Send signals to motor controllers regularly and continously.
   If no message has been recieved in 1s, turn everything off
 
   Use the MAX7219 chip (it has a latch signal so there is no flicker and rows are all equally bright)
