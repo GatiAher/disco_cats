@@ -207,23 +207,24 @@ void loop() {
           updateVisualizer(channel, note, velocity, noteDown);
         }
 
-        int row = 0;
-        while (row < 8) {
-          if (millis() - rowMillis > 2) {
-            playMatrix(row);
-            rowMillis = millis();
-            row++;
-          }
-          for (int i = 0; i < nrOfMotors; i++) {
-            stepperPtrArray[i] -> runSpeed();
-          }
-        }
         state = 0;  // reset state machine
         break;
 
       default:
         state = 0; // reset state machine
         break;
+    }
+  }
+
+  int row = 0;
+  while (row < 8) {
+    if (millis() - rowMillis > 2) {
+      playMatrix(row);
+      rowMillis = millis();
+      row++;
+    }
+    for (int i = 0; i < nrOfMotors; i++) {
+      stepperPtrArray[i] -> runSpeed();
     }
   }
 
@@ -285,7 +286,7 @@ void updateVisualizer(int channel, byte note, byte velocity, int down) {
     case 0:
       // note C
       LED_MATRIX[instrument][0] = (down) ? 1 : 0;
-      break
+      break;
 
     case 1:
       // note C#
