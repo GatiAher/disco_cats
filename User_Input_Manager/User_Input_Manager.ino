@@ -1,5 +1,6 @@
 /*
    Turn Button Presses into Serial Commands
+   Disco Cats
 
    If seed button is pressed, play seed, record selection, and send seed selection over serial
    If interpolate button is pressed, send all seed selections over serial

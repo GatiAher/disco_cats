@@ -1,5 +1,5 @@
 # Disco Cats
->Gati Aher, Max Stopyra, Cory Knox, Efe Cemal Clucu, Mari Kang  
+>Gati Aher, Efe Cemal Glucu, Mari Kang, Cory Knox, Max Stopyra
  Oct 28, 2021
  Final Project for Principles of Integrated Design
 
