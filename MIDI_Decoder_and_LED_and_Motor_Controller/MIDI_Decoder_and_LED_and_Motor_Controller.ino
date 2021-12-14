@@ -1,14 +1,16 @@
 /*
-   MIDI File to LED + Motor Lightshow!
-   Disco Cats
+  MIDI File to LED + Motor Show!
+  Disco Cats
 
-  Use the MAX7219 chip (it has a latch signal so there is no flicker and rows are all equally bright)
   Given MIDI stream, lights correspond to pitch of notes played by instrument on different channels
   and the motors run based on the instrument. 
   0. Initialize inputs and outputs, motors, MAX7219 config, begin serial, and test that LEDs work
   1. Read and decode MIDI message with a state machine
   2. Update matrix state and motor 
   3. Shift data onto hardware MAX7219 chip, 16-bit shift register with SPI of 4 wires (GND, CLK, CS, DIN)
+
+  Use the MAX7219 chip to control 8x8 LED Matrix. MAX7219 uses has a latch signal so there is no flicker and rows are all equally bright
+  Use Accelstepper library to control ULN2003 driver boards connected to 28-BYJ48 stepper motors
 */
 
 ///////////////
@@ -69,7 +71,6 @@ int LED_MATRIX[ 8 ][ 8 ] = {
 #define OP_SCANLIMIT   11
 #define OP_SHUTDOWN    12
 #define OP_DISPLAYTEST 15
-
 
 ////////////////
 // MOTOR VARS //
@@ -382,7 +383,6 @@ void playMatrix(int row) {
   // delay(2); // Time to hold on row before continuing
 
 }
-
 
 
 void spiTransfer(volatile byte opcode, volatile byte data) {
