@@ -1,61 +1,59 @@
 # Disco Cats
 >Gati Aher, Max Stopyra, Cory Knox, Efe Cemal Clucu, Mari Kang  
- Oct 28, 2021
+ Oct 28, 2021 - Dec 14, 2021  
  Final Project for Principles of Integrated Design
 
 - [Disco Cats](#disco-cats)
-  - [BOM](#bom)
-  - [Subsystem for Generating AI-Powered Music](#subsystem-for-generating-ai-powered-music)
+  - [Hardware](#hardware)
+  - [Integration Map](#integration-map)
+  - [Subsystem for accepting user input](#subsystem-for-accepting-user-input)
+  - [Subsystem for playing and transferring saved MIDI file from Laptop to Arduino](#subsystem-for-playing-and-transferring-saved-midi-file-from-laptop-to-arduino)
     - [Install](#install)
     - [Run](#run)
-  - [Subsystem for playing and transferring saved MIDI file to arduino](#subsystem-for-playing-and-transferring-saved-midi-file-to-arduino)
-    - [Install](#install-1)
+  - [Subsystem for Generating AI-Powered Music](#subsystem-for-generating-ai-powered-music)
+    - [Installation Guide](#installation-guide)
     - [Run](#run-1)
-  - [Subsystem for accepting user input](#subsystem-for-accepting-user-input)
-  - [Subsystem for Arduino Control of Lights and Music](#subsystem-for-arduino-control-of-lights-and-music)
-- [Resources](#resources)
-  - [Machine Learning for Multi-Track Music Generation](#machine-learning-for-multi-track-music-generation)
-  - [Send MIDI Files Between Laptop and Arduino](#send-midi-files-between-laptop-and-arduino)
-  - [Observe MIDI Files](#observe-midi-files)
+  - [Subsystem for Arduino Control of Lights and Motors](#subsystem-for-arduino-control-of-lights-and-motors)
+    - [MAX7219 Chip](#max7219-chip)
+    - [Motor Control](#motor-control)
 
-## BOM
+## Hardware
 * Ubuntu 20.04
-* Arduino UNO
+* Arduino Uno
+* Arduino Mega
+* [28-BYJ48 stepper motors](https://www.mouser.com/datasheet/2/758/stepd-01-data-sheet-1143075.pdf)
+* [ULN2003 driver boards](https://www.electronicoscaldas.com/datasheet/ULN2003A-PCB.pdf)
+* [MAX7219 LED driver chip](https://datasheets.maximintegrated.com/en/ds/MAX7219-MAX7221.pdf)
 
-## Subsystem for Generating AI-Powered Music 
+## Integration Map
 
-Subsystem for using machine learning to generate seed songs (1-phrase, 8 instruments) + Subsystem for using Variational AutoEncoder (VAE) interpolation to "generate" a longer song that transitions from seed A to seed B
+![Integration Map](/img/integration_map.png)
 
-### Install
+## Subsystem for accepting user input
 
-Install Ubuntu Packages
-* `sudo apt update`
-* might have to run as root `sudo -s` 
-  * `apt-get install libfluidsynth build-essential libasound2-dev libjack-dev portaudio19-dev`
+Overview:
+* Arduino_button sends results of button input over serial `/dev/ttyACM1`
+* Laptop listens to `/dev/ttyACM1` and sends selected midi file over serial `/dev/ttyACM0` (can be configured to work with different ports)
+* Arduino_lights listens to `/dev/ttyACM0` and controls LEDs
 
-Install and Activate `magenta` Environment
-* `curl https://raw.githubusercontent.com/tensorflow/magenta/main/magenta/tools/magenta-install.sh > /tmp/magenta-install.sh`
-* `bash /tmp/magenta-install.sh`
-* `conda activate magenta`
+Installation:
+* everything required for music generation and transmittance to arduino
+* google/python-fire: `conda install fire -c conda-forge`
+* pySerial: `pip install pyserial`
 
-Install Python Packages
-* `conda install anaconda`
-* `pip install --upgrade tensorflow`
-* `pip install magenta pyfluidsynth pretty_midi`
+Run:
+1. Load code onto Arduino
+2. `ttymidi -s /dev/ttyACM0`
+3. `timidity -iA`
+4. `aconnect 128:0 129:0`
+5. `conda activate magenta`
+6. `python3 Linux_Music_Generator.py`
 
-Get `gsutil` and use it to put sf2 file and magenta model files into content folder:
-* `mkdir content`
-* Install `gsutil`: https://cloud.google.com/storage/docs/gsutil_install#deb
-* Download [soundfonts](https://sites.google.com/site/soundfonts4u) (virtual musical instrument sounds in sf2 format)
-  * `gsutil -q -m cp gs://download.magenta.tensorflow.org/soundfonts/SGM-v2.01-Sal-Guit-Bass-V1.3.sf2 content/`
-* Download magenta model (3 files for each model, 6 files total): 
-  * `gsutil -q -m cp gs://download.magenta.tensorflow.org/models/music_vae/multitrack/* content/`
+## Subsystem for playing and transferring saved MIDI file from Laptop to Arduino
 
-### Run
-* `conda activate magenta`
-* `jupyer notebook Experiment.ipynb`
+[Ttymidi](http://www.varal.org/ttymidi/): allows external serial devices to interface with ALSA MIDI applications.
 
-## Subsystem for playing and transferring saved MIDI file to arduino
+[TiMidity++](http://timidity.sourceforge.net/#info): software synthesizer that can play MIDI files without a hardware synthesizer. Plays MIDI files on Ubuntu and allows Arduino boards to talk to MIDI applications.
 
 ### Install
 
@@ -84,46 +82,40 @@ aconnect -i            # this just shows input port options
 aconnect -o            # this just shows output port options
 ```
 
-## Subsystem for accepting user input
+## Subsystem for Generating AI-Powered Music 
 
-Overview:
-* Arduino_button sends results of button input over serial `/dev/ttyACM1`
-* Laptop listens to `/dev/ttyACM1` and sends selected midi file over serial `/dev/ttyACM0`
-* Arduino_lights listens to `/dev/ttyACM0` and controls LEDs
+Subsystem for using machine learning to generate seed songs (1-phrase, 8 instruments) + Subsystem for using Variational AutoEncoder (VAE) interpolation to "generate" a longer song that transitions from seed A to seed B
 
-Installation:
-* everything required for music generation and transmittance to arduino
-* google/python-fire: `conda install fire -c conda-forge`
-* pySerial: `pip install pyserial`
+### Installation Guide
 
-Run:
-1. Load code onto Arduino
-2. `ttymidi -s /dev/ttyACM0`
-3. `timidity -iA`
-4. `aconnect 128:0 129:0`
-5. `conda activate magenta`
-6. `python3 Linux_Music_Generator.py`
+Install Ubuntu Packages
+* `sudo apt update`
+* might have to run as root `sudo -s` 
+  * `apt-get install libfluidsynth build-essential libasound2-dev libjack-dev portaudio19-dev`
 
-## Subsystem for Arduino Control of Lights and Music
+Install and Activate `magenta` Environment
+* `curl https://raw.githubusercontent.com/tensorflow/magenta/main/magenta/tools/magenta-install.sh > /tmp/magenta-install.sh`
+* `bash /tmp/magenta-install.sh`
+* `conda activate magenta`
 
-Components
-* MIDI Decoder: finite state machine, decodes each message as command-data-data bytes
-* Matrix State: tracks state of LED
-* Hardware Interface: Using 4-wire SPI interface to MAX7219 chip
+Install Python Packages
+* `conda install anaconda`
+* `pip install --upgrade tensorflow`
+* `pip install magenta pyfluidsynth pretty_midi`
 
-MAX7219 Chip:
-* Rapid multiplexing: to drive one row of LEDs at a time
-* Shift register: to place data values for cells of a given row
-* Latch register: to load data values to LED Matrix only when all values have been shifted into their final place
+Get `gsutil` and use it to put sf2 file and magenta model files into content folder:
+* `mkdir content`
+* Install `gsutil`: https://cloud.google.com/storage/docs/gsutil_install#deb
+* Download [soundfonts](https://sites.google.com/site/soundfonts4u) (virtual musical instrument sounds in sf2 format)
+  * `gsutil -q -m cp gs://download.magenta.tensorflow.org/soundfonts/SGM-v2.01-Sal-Guit-Bass-V1.3.sf2 content/`
+* Download magenta model (3 files for each model, 6 files total): 
+  * `gsutil -q -m cp gs://download.magenta.tensorflow.org/models/music_vae/multitrack/* content/`
 
-Challenges:
-* Very funky wiring diagram and MAX7219 initialization on start-up
-* Had to write own code to manage LED matrix with state of MIDI file
-* Using no libraries because libraries are slow (bloated) and unnecessary
+### Run
+* `conda activate magenta`
+* `jupyer notebook Experiment.ipynb`
 
-# Resources
-
-## Machine Learning for Multi-Track Music Generation
+**Resources on Machine Learning for Multi-Track Music Generation**
 
 VAE Theory
 * [Picture-based explanation of VAE models](https://www.jeremyjordan.me/variational-autoencoders/)
@@ -133,13 +125,26 @@ Google Magenta Multitrack MusicVAE
 * [Jupyter Notebook: Multitrack MusicVAE.ipynb - Colaboratory](https://colab.research.google.com/github/magenta/magenta-demos/blob/master/colab-notebooks/Multitrack_MusicVAE.ipynb)
 * [GitHub Repo](https://github.com/magenta/magenta/tree/main/magenta/models/music_vae)
 
-## Send MIDI Files Between Laptop and Arduino
+## Subsystem for Arduino Control of Lights and Motors
 
-[Ttymidi](http://www.varal.org/ttymidi/): allows external serial devices to interface with ALSA MIDI applications.
+**Components**
+* MIDI Decoder: finite state machine, decodes each message as command-data-data bytes
+* Matrix State: tracks state of LED
+* Hardware Interface: Using 3-wire SPI interface to MAX7219 chip
 
-[TiMidity++](http://timidity.sourceforge.net/#info): software synthesizer that can play MIDI files without a hardware synthesizer. Plays MIDI files on Ubuntu and allows Arduino boards to talk to MIDI applications.
+### MAX7219 Chip
+* Rapid multiplexing: to drive one row of LEDs at a time
+* Shift register: to place data values for cells of a given row
+* Latch register: to load data values to LED Matrix only when all values have been shifted into their final place
 
-## Observe MIDI Files
+Challenges:
+* Very funky wiring diagram and MAX7219 initialization on start-up
+* Had to write own code to manage LED matrix with state of MIDI file
+* Using no libraries because libraries are slow (bloated) and unnecessary
+
+### Motor Control
+* Using 28-BYJ48 stepper motors and ULN20-03 driver boards because they are the most common stepper drivers and thus have ready-made compatible arduino libraries
+* Using [Accelstepper](https://www.arduino.cc/reference/en/libraries/accelstepper/) library because it allows us to control motors with array pointers, which makes the motor status iteration code very clean.
 
 [Rosegarden] - track-oriented audio / MIDI sequencer to visualize MIDI files. Very finicky...
 * Install: `sudo apt install rosegarden`
