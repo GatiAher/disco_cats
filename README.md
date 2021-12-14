@@ -4,6 +4,7 @@
  Final Project for Principles of Integrated Design
 
 - [Disco Cats](#disco-cats)
+  - [Project Website](#project-website)
   - [Hardware](#hardware)
   - [Integration Map](#integration-map)
   - [Subsystem for accepting user input](#subsystem-for-accepting-user-input)
@@ -16,6 +17,10 @@
   - [Subsystem for Arduino Control of Lights and Motors](#subsystem-for-arduino-control-of-lights-and-motors)
     - [MAX7219 Chip](#max7219-chip)
     - [Motor Control](#motor-control)
+
+## Project Website
+
+Check out our final website and documentation at: https://olincollege.github.io/pie-2021-03/Disco-Cats/ 
 
 ## Hardware
 * Ubuntu 20.04
