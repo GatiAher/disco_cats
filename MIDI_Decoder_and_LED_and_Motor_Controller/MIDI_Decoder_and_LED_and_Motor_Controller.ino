@@ -1,17 +1,13 @@
 /*
    MIDI File to LED + Motor Lightshow!
-   Gati Aher
-   Dec 10, 2021
-
-  Use 8 milis (every 16 ms) commands to run one of the 8 rows every 2ms
-  Send signals to motor controllers regularly and continously.
-  If no message has been recieved in 1s, turn everything off
+   Disco Cats
 
   Use the MAX7219 chip (it has a latch signal so there is no flicker and rows are all equally bright)
-  Given MIDI stream, lights correspond to pitch of notes played by instrument on channel 1
-  0. Initialize inputs and outputs, MAX7219 config, begin serial, and test that LEDs work
+  Given MIDI stream, lights correspond to pitch of notes played by instrument on different channels
+  and the motors run based on the instrument. 
+  0. Initialize inputs and outputs, motors, MAX7219 config, begin serial, and test that LEDs work
   1. Read and decode MIDI message with a state machine
-  2. Update matrix state
+  2. Update matrix state and motor 
   3. Shift data onto hardware MAX7219 chip, 16-bit shift register with SPI of 4 wires (GND, CLK, CS, DIN)
 */
 
@@ -91,6 +87,7 @@ uint8_t MotorPins[][10] = {
 // Define the AccelStepper interface type; 4 wire motor in half step mode:
 #define MotorInterfaceType 4
 
+//Number of the motors
 const int nrOfMotors = 9;
 
 AccelStepper *stepperPtrArray[nrOfMotors];
@@ -217,10 +214,14 @@ void loop() {
     }
   }
 
+  //check if the last LED row update time is greater than 2 milliseconds
+  //for delay and update the row
   int row = 0;
   while (row < 8) {
     if (millis() - rowMillis > 2) {
+      //update the LED row
       playMatrix(row);
+      //save the last time LED is updated
       rowMillis = millis();
       row++;
     }
@@ -252,6 +253,15 @@ void loop() {
 
 
 void updateMotor(int instrument, byte velocity) {
+   /*
+     Update the speed of the motor. 
+     Motors move when corresponding instrument is played.
+     'count' array is used to ignore short pause of the 
+     instrument.
+  */
+
+  // if the instrument is played, update the array that
+  // checks the last time instrument is played.
   if (count[instrument] > 0) {
     count[instrument] = 0;
   }
@@ -262,6 +272,9 @@ void updateMotor(int instrument, byte velocity) {
     //if this channel (instrument) has been played
     if (count[i] < 30) {
       stepperPtrArray[i] -> setSpeed(600);
+      // if it's the 8th motor, also move the 9th motor
+      // but in an opposite direction because the two motors
+      // are paired.
       if (i == 7) {
         stepperPtrArray[i + 1] -> setSpeed(-600);
       }
@@ -278,11 +291,20 @@ void updateMotor(int instrument, byte velocity) {
 
 
 void updateVisualizer(int channel, byte note, byte velocity, int down) {
+  /*
+     Update the motor and the LED matrix based on the MIDI input.
+     Use modulus operator to group the channels into 8 pairs.
+     Instrument (channel) is used to update the motor,
+     and instrument and note is both used to update the LED matrix.
+  */
+  
   // instrument is from 0 to 7
   int instrument = channel % 8;
 
   updateMotor(instrument, velocity);
 
+
+  // update the LED matrix based on the note
   switch (note % 12) {
     case 0:
       // note C
